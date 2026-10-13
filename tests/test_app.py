@@ -21,6 +21,13 @@ class BmiAppTests(unittest.TestCase):
         self.assertIn("健康體位", page)
         self.assertIn("維持均衡飲食", page)
 
+    def test_abnormal_bmi_is_highlighted_in_red(self):
+        for height, weight, tone in [("170", "50", "low"), ("170", "75", "high")]:
+            with self.subTest(height=height, weight=weight):
+                response = self.client.post("/", data={"height": height, "weight": weight})
+                page = response.get_data(as_text=True)
+                self.assertIn(f'class="result-number {tone}"', page)
+
     def test_taiwan_adult_thresholds(self):
         for bmi, category in [
             (18.4, "體重過輕"),
