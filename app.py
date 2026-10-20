@@ -1,43 +1,8 @@
 import math
-import os
-import sqlite3
-from contextlib import closing
-from datetime import datetime
 
 from flask import Flask, render_template, request
 
 app = Flask(__name__)
-app.config["DATABASE"] = os.environ.get(
-    "BMI_DATABASE_PATH", os.path.join(app.root_path, "bmi.sqlite3")
-)
-
-
-def get_db():
-    database = sqlite3.connect(app.config["DATABASE"])
-    database.row_factory = sqlite3.Row
-    database.execute(
-        """
-        CREATE TABLE IF NOT EXISTS bmi_records (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_name TEXT NOT NULL,
-            bmi REAL NOT NULL,
-            calculated_at TEXT NOT NULL
-        )
-        """
-    )
-    return database
-
-
-def get_users():
-    with closing(get_db()) as database:
-        return database.execute(
-            """
-            SELECT user_name, COUNT(*) AS record_count
-            FROM bmi_records
-            GROUP BY user_name
-            ORDER BY user_name COLLATE NOCASE
-            """
-        ).fetchall()
 
 
 def bmi_guidance(bmi):
@@ -83,23 +48,17 @@ def bmi_gauge_position(bmi):
 
 @app.route("/", methods=["GET", "POST"])
 def index():
-    user_name_input = ""
     height_input = ""
     weight_input = ""
     errors = {}
     result = None
-    users = get_users()
 
     if request.method == "POST":
-        user_name_input = request.form.get("user_name", "").strip()
         height_input = request.form.get("height", "").strip()
         weight_input = request.form.get("weight", "").strip()
-        user_name = user_name_input or "訪客"
         height = parse_positive_number(height_input)
         weight = parse_positive_number(weight_input)
 
-        if len(user_name) > 100:
-            errors["user_name"] = "使用者名稱不可超過 100 個字元。"
         if height is None:
             errors["height"] = "請輸入大於 0 的有效身高（公分）。"
         if weight is None:
@@ -121,45 +80,14 @@ def index():
                         "gauge_position": bmi_gauge_position(displayed_bmi),
                         **bmi_guidance(displayed_bmi),
                     }
-                    with closing(get_db()) as database:
-                        database.execute(
-                            """
-                            INSERT INTO bmi_records (user_name, bmi, calculated_at)
-                            VALUES (?, ?, ?)
-                            """,
-                            (
-                                user_name,
-                                displayed_bmi,
-                                datetime.now().astimezone().isoformat(timespec="seconds"),
-                            ),
-                        )
-                        database.commit()
-                    users = get_users()
 
     return render_template(
         "index.html",
-        user_name_input=user_name_input,
         height_input=height_input,
         weight_input=weight_input,
         errors=errors,
         result=result,
-        users=users,
     )
-
-
-@app.route("/users/<path:user_name>")
-def user_history(user_name):
-    with closing(get_db()) as database:
-        records = database.execute(
-            """
-            SELECT bmi, calculated_at
-            FROM bmi_records
-            WHERE user_name = ?
-            ORDER BY calculated_at DESC, id DESC
-            """,
-            (user_name,),
-        ).fetchall()
-    return render_template("user_history.html", user_name=user_name, records=records)
 
 
 if __name__ == "__main__":
