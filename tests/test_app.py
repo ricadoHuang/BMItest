@@ -1,3 +1,5 @@
+import os
+import tempfile
 import unittest
 
 from app import app, bmi_guidance
@@ -5,7 +7,13 @@ from app import app, bmi_guidance
 
 class BmiAppTests(unittest.TestCase):
     def setUp(self):
+        self.database_file = tempfile.NamedTemporaryFile(delete=False)
+        self.database_file.close()
+        app.config["DATABASE"] = self.database_file.name
         self.client = app.test_client()
+
+    def tearDown(self):
+        os.unlink(self.database_file.name)
 
     def test_initial_page(self):
         response = self.client.get("/")
@@ -54,6 +62,29 @@ class BmiAppTests(unittest.TestCase):
         page = response.get_data(as_text=True)
         self.assertNotIn("<script>", page)
         self.assertIn("請輸入大於 0", page)
+
+    def test_user_history_is_saved_and_linked_from_user_list(self):
+        self.client.post("/", data={"user_name": "王小明", "height": "170", "weight": "65"})
+        self.client.post("/", data={"user_name": "王小明", "height": "170", "weight": "75"})
+
+        response = self.client.get("/")
+        page = response.get_data(as_text=True)
+        self.assertIn("王小明", page)
+        self.assertIn("2 筆紀錄", page)
+        self.assertIn("/users/%E7%8E%8B%E5%B0%8F%E6%98%8E", page)
+
+        response = self.client.get("/users/王小明")
+        page = response.get_data(as_text=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("王小明的", page)
+        self.assertIn("22.5", page)
+        self.assertIn("26.0", page)
+        self.assertIn("T", page)
+
+    def test_missing_name_is_saved_as_guest(self):
+        self.client.post("/", data={"height": "170", "weight": "65"})
+        response = self.client.get("/")
+        self.assertIn("訪客", response.get_data(as_text=True))
 
 
 if __name__ == "__main__":
