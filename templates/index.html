@@ -72,6 +72,19 @@
                   <span class="result-number {{ result.tone }}">{{ result.bmi }}</span>
                   <span class="result-unit">BMI</span>
                 </div>
+                <div class="bmi-gauge" aria-label="BMI 範圍：{{ result.label }}">
+                  <div class="gauge-track" aria-hidden="true">
+                    <span class="gauge-segment gauge-low"></span>
+                    <span class="gauge-segment gauge-healthy"></span>
+                    <span class="gauge-segment gauge-high"></span>
+                    <span class="gauge-pointer" style="left: {{ result.gauge_position }}%;"></span>
+                  </div>
+                  <div class="gauge-labels">
+                    <span>過輕<br><strong>&lt; 18.5</strong></span>
+                    <span>正常<br><strong>18.5 - 23.9</strong></span>
+                    <span>過重<br><strong>&ge; 24</strong></span>
+                  </div>
+                </div>
                 <div class="result-divider"></div>
                 <span class="result-label">你的體位屬於 <strong>{{ result.label }}</strong></span>
                 <h2 id="result-title">給你的健康建議</h2>

@@ -2,7 +2,7 @@ import os
 import tempfile
 import unittest
 
-from app import app, bmi_guidance
+from app import app, bmi_gauge_position, bmi_guidance
 
 
 class BmiAppTests(unittest.TestCase):
@@ -47,6 +47,21 @@ class BmiAppTests(unittest.TestCase):
         ]:
             with self.subTest(bmi=bmi):
                 self.assertEqual(bmi_guidance(bmi)["label"], category)
+
+    def test_bmi_gauge_marks_ranges_and_clamps_extremes(self):
+        self.assertEqual(bmi_gauge_position(10), 0)
+        self.assertEqual(bmi_gauge_position(22.5), 50)
+        self.assertEqual(bmi_gauge_position(35), 100)
+        self.assertEqual(bmi_gauge_position(5), 0)
+        self.assertEqual(bmi_gauge_position(40), 100)
+
+        response = self.client.post("/", data={"height": "170", "weight": "65"})
+        page = response.get_data(as_text=True)
+        self.assertIn("gauge-pointer", page)
+        self.assertIn("正常", page)
+        self.assertIn("過輕", page)
+        self.assertIn("過重", page)
+        self.assertIn('left: 50.0%;', page)
 
     def test_invalid_fields_do_not_produce_result(self):
         for height, weight in [("", "65"), ("0", "65"), ("abc", "65"), ("170", "-2"), ("inf", "65"), ("170", "nan"), ("1e-300", "65"), ("1e308", "65"), ("1", "1e308")]:

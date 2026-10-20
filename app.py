@@ -73,6 +73,13 @@ def parse_positive_number(value):
     return number if math.isfinite(number) and number > 0 else None
 
 
+def bmi_gauge_position(bmi):
+    gauge_min = 10
+    gauge_max = 35
+    position = (bmi - gauge_min) / (gauge_max - gauge_min) * 100
+    return max(0, min(100, round(position, 1)))
+
+
 @app.route("/", methods=["GET", "POST"])
 def index():
     user_name_input = ""
@@ -108,7 +115,11 @@ def index():
                     errors["weight"] = "無法使用這組數值計算 BMI，請檢查身高與體重。"
                 else:
                     displayed_bmi = round(bmi, 1)
-                    result = {"bmi": f"{displayed_bmi:.1f}", **bmi_guidance(displayed_bmi)}
+                    result = {
+                        "bmi": f"{displayed_bmi:.1f}",
+                        "gauge_position": bmi_gauge_position(displayed_bmi),
+                        **bmi_guidance(displayed_bmi),
+                    }
                     with get_db() as database:
                         database.execute(
                             """
