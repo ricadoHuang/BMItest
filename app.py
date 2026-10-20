@@ -1,6 +1,7 @@
 import math
 import os
 import sqlite3
+from contextlib import closing
 from datetime import datetime
 
 from flask import Flask, render_template, request
@@ -28,7 +29,7 @@ def get_db():
 
 
 def get_users():
-    with get_db() as database:
+    with closing(get_db()) as database:
         return database.execute(
             """
             SELECT user_name, COUNT(*) AS record_count
@@ -109,7 +110,7 @@ def index():
                 else:
                     displayed_bmi = round(bmi, 1)
                     result = {"bmi": f"{displayed_bmi:.1f}", **bmi_guidance(displayed_bmi)}
-                    with get_db() as database:
+                    with closing(get_db()) as database:
                         database.execute(
                             """
                             INSERT INTO bmi_records (user_name, bmi, calculated_at)
@@ -121,6 +122,7 @@ def index():
                                 datetime.now().astimezone().isoformat(timespec="seconds"),
                             ),
                         )
+                        database.commit()
                     users = get_users()
 
     return render_template(
@@ -136,7 +138,7 @@ def index():
 
 @app.route("/users/<path:user_name>")
 def user_history(user_name):
-    with get_db() as database:
+    with closing(get_db()) as database:
         records = database.execute(
             """
             SELECT bmi, calculated_at
