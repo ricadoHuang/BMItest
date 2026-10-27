@@ -55,6 +55,87 @@
                 <button type="submit">計算 BMI <span aria-hidden="true">↗</span></button>
               </form>
             </div>
+
+            <section class="feature-card" aria-labelledby="military-title">
+              <span class="section-number">03 / MILITARY CHECK</span>
+              <h2 id="military-title">兵役體位初步判斷</h2>
+              <p>依身高與 BMI 提供初步篩選結果，實際體位仍以徵兵檢查及最新法規為準。</p>
+              <form method="post" action="{{ url_for('index') }}" novalidate>
+                <input type="hidden" name="feature" value="military">
+                <div class="form-fields">
+                  <div class="field">
+                    <label for="military-height">身高 <span>HEIGHT</span></label>
+                    <div class="input-wrap">
+                      <input id="military-height" name="height" type="number" inputmode="decimal" min="0.01" step="any" placeholder="例如 170" value="{{ height_input }}" required {% if military_errors.height %}aria-invalid="true" aria-describedby="military-height-error"{% endif %}>
+                      <span class="unit">cm</span>
+                    </div>
+                    {% if military_errors.height %}<p class="field-error" id="military-height-error">{{ military_errors.height }}</p>{% endif %}
+                  </div>
+                  <div class="field">
+                    <label for="military-weight">體重 <span>WEIGHT</span></label>
+                    <div class="input-wrap">
+                      <input id="military-weight" name="weight" type="number" inputmode="decimal" min="0.01" step="any" placeholder="例如 65" value="{{ weight_input }}" required {% if military_errors.weight %}aria-invalid="true" aria-describedby="military-weight-error"{% endif %}>
+                      <span class="unit">kg</span>
+                    </div>
+                    {% if military_errors.weight %}<p class="field-error" id="military-weight-error">{{ military_errors.weight }}</p>{% endif %}
+                  </div>
+                </div>
+                <button type="submit">判斷兵役體位 <span aria-hidden="true">↗</span></button>
+              </form>
+              {% if military_result %}
+                <div class="feature-result {{ military_result.tone }}" aria-live="polite">
+                  <strong>{{ military_result.label }}</strong>
+                  <span>BMI {{ military_result.bmi }}</span>
+                  <p>{{ military_result.advice }}</p>
+                </div>
+              {% endif %}
+            </section>
+
+            <section class="feature-card" aria-labelledby="target-title">
+              <span class="section-number">04 / WEIGHT GOAL</span>
+              <h2 id="target-title">體重目標管理</h2>
+              <p>輸入目標 BMI，查看目前 BMI 與目標的差異，以及對應的目標體重。</p>
+              <form method="post" action="{{ url_for('index') }}" novalidate>
+                <input type="hidden" name="feature" value="target">
+                <div class="form-fields">
+                  <div class="field">
+                    <label for="target-height">身高 <span>HEIGHT</span></label>
+                    <div class="input-wrap">
+                      <input id="target-height" name="height" type="number" inputmode="decimal" min="0.01" step="any" placeholder="例如 170" value="{{ height_input }}" required {% if target_errors.height %}aria-invalid="true" aria-describedby="target-height-error"{% endif %}>
+                      <span class="unit">cm</span>
+                    </div>
+                    {% if target_errors.height %}<p class="field-error" id="target-height-error">{{ target_errors.height }}</p>{% endif %}
+                  </div>
+                  <div class="field">
+                    <label for="target-weight">目前體重 <span>WEIGHT</span></label>
+                    <div class="input-wrap">
+                      <input id="target-weight" name="weight" type="number" inputmode="decimal" min="0.01" step="any" placeholder="例如 65" value="{{ weight_input }}" required {% if target_errors.weight %}aria-invalid="true" aria-describedby="target-weight-error"{% endif %}>
+                      <span class="unit">kg</span>
+                    </div>
+                    {% if target_errors.weight %}<p class="field-error" id="target-weight-error">{{ target_errors.weight }}</p>{% endif %}
+                  </div>
+                </div>
+                <div class="field single-field">
+                  <label for="target-bmi">目標 BMI <span>TARGET BMI</span></label>
+                  <div class="input-wrap">
+                    <input id="target-bmi" name="target_bmi" type="number" inputmode="decimal" min="10" max="60" step="0.1" placeholder="例如 22" value="{{ target_bmi_input }}" required {% if target_errors.target_bmi %}aria-invalid="true" aria-describedby="target-bmi-error"{% endif %}>
+                    <span class="unit">BMI</span>
+                  </div>
+                  {% if target_errors.target_bmi %}<p class="field-error" id="target-bmi-error">{{ target_errors.target_bmi }}</p>{% endif %}
+                </div>
+                <button type="submit">計算體重目標 <span aria-hidden="true">↗</span></button>
+              </form>
+              {% if target_result %}
+                <div class="feature-result" aria-live="polite">
+                  <div class="goal-values">
+                    <span>目前 BMI <strong>{{ target_result.current_bmi }}</strong></span>
+                    <span>目標 BMI <strong>{{ target_result.target_bmi }}</strong></span>
+                    <span>目標體重 <strong>{{ target_result.target_weight }} kg</strong></span>
+                    <span>需調整 <strong>{{ target_result.weight_change }} kg</strong></span>
+                  </div>
+                </div>
+              {% endif %}
+            </section>
           </div>
 
           <div class="hero-side">
