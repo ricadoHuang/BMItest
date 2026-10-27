@@ -1,6 +1,6 @@
 import unittest
 
-from app import app, bmi_gauge_position, bmi_guidance
+from app import app, bmi_gauge_position, bmi_guidance, military_guidance
 
 
 class BmiAppTests(unittest.TestCase):
@@ -69,6 +69,44 @@ class BmiAppTests(unittest.TestCase):
         page = response.get_data(as_text=True)
         self.assertNotIn("<script>", page)
         self.assertIn("請輸入大於 0", page)
+
+    def test_military_classification(self):
+        self.assertEqual(military_guidance(170, 22.5)["label"], "常備役體位（初步篩選）")
+        self.assertEqual(military_guidance(170, 15.5)["label"], "替代役體位（初步篩選）")
+        self.assertEqual(military_guidance(170, 36)["label"], "免役體位（初步篩選）")
+        self.assertEqual(military_guidance(154, 22.5)["label"], "免役體位（初步篩選）")
+
+    def test_military_form_displays_classification(self):
+        response = self.client.post("/", data={"feature": "military", "height": "170", "weight": "65"})
+        page = response.get_data(as_text=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("常備役體位（初步篩選）", page)
+        self.assertIn("BMI 22.5", page)
+
+    def test_target_weight_form_calculates_goal(self):
+        response = self.client.post("/", data={
+            "feature": "target",
+            "height": "170",
+            "weight": "65",
+            "target_bmi": "24",
+        })
+        page = response.get_data(as_text=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("目前 BMI", page)
+        self.assertIn("目標 BMI", page)
+        self.assertIn("69.4 kg", page)
+        self.assertIn("+4.4 kg", page)
+
+    def test_target_bmi_must_be_in_range(self):
+        response = self.client.post("/", data={
+            "feature": "target",
+            "height": "170",
+            "weight": "65",
+            "target_bmi": "61",
+        })
+        page = response.get_data(as_text=True)
+        self.assertIn("請輸入 10 到 60 之間的有效目標 BMI", page)
+        self.assertNotIn("目標體重 <strong>", page)
 
 if __name__ == "__main__":
     unittest.main()
