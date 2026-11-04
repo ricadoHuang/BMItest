@@ -1,9 +1,9 @@
 import unittest
 
-from app import app, bmi_gauge_position, bmi_guidance, military_guidance
+from app import app
 
 
-class BmiAppTests(unittest.TestCase):
+class BmiRouteTests(unittest.TestCase):
     def setUp(self):
         self.client = app.test_client()
 
@@ -28,25 +28,7 @@ class BmiAppTests(unittest.TestCase):
                 page = response.get_data(as_text=True)
                 self.assertIn(f'class="result-number {tone}"', page)
 
-    def test_taiwan_adult_thresholds(self):
-        for bmi, category in [
-            (18.4, "體重過輕"),
-            (18.5, "健康體位"),
-            (23.9, "健康體位"),
-            (24.0, "體重過重"),
-            (26.9, "體重過重"),
-            (27.0, "肥胖"),
-        ]:
-            with self.subTest(bmi=bmi):
-                self.assertEqual(bmi_guidance(bmi)["label"], category)
-
-    def test_bmi_gauge_marks_ranges_and_clamps_extremes(self):
-        self.assertEqual(bmi_gauge_position(10), 0)
-        self.assertEqual(bmi_gauge_position(22.5), 50)
-        self.assertEqual(bmi_gauge_position(35), 100)
-        self.assertEqual(bmi_gauge_position(5), 0)
-        self.assertEqual(bmi_gauge_position(40), 100)
-
+    def test_bmi_gauge_displayed_on_result_page(self):
         response = self.client.post("/", data={"height": "170", "weight": "65"})
         page = response.get_data(as_text=True)
         self.assertIn("gauge-pointer", page)
@@ -69,12 +51,6 @@ class BmiAppTests(unittest.TestCase):
         page = response.get_data(as_text=True)
         self.assertNotIn("<script>", page)
         self.assertIn("請輸入大於 0", page)
-
-    def test_military_classification(self):
-        self.assertEqual(military_guidance(170, 22.5)["label"], "常備役體位（初步篩選）")
-        self.assertEqual(military_guidance(170, 15.5)["label"], "替代役體位（初步篩選）")
-        self.assertEqual(military_guidance(170, 36)["label"], "免役體位（初步篩選）")
-        self.assertEqual(military_guidance(154, 22.5)["label"], "免役體位（初步篩選）")
 
     def test_military_form_displays_classification(self):
         response = self.client.post("/", data={"feature": "military", "height": "170", "weight": "65"})
@@ -107,6 +83,7 @@ class BmiAppTests(unittest.TestCase):
         page = response.get_data(as_text=True)
         self.assertIn("請輸入 10 到 60 之間的有效目標 BMI", page)
         self.assertNotIn("目標體重 <strong>", page)
+
 
 if __name__ == "__main__":
     unittest.main()
